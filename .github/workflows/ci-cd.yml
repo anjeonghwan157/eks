@@ -39,15 +39,15 @@ jobs:
 
     - name: Install kubectl
       run: |
-        KUBECTL_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
-        curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+        curl -LO "https://dl.k8s.io/release/v1.30.1/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
+
 
     - name: Set kubeconfig from secret
       run: |
         mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+        echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
 
     - name: Update Kubernetes deployment
       run: |
