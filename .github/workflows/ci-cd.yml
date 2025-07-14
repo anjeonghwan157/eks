@@ -44,10 +44,10 @@ jobs:
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
 
-    - name: Set up kubeconfig
+    - name: Set kubeconfig from secret
       run: |
         mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+        echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
 
     - name: Update Kubernetes deployment
       run: |
