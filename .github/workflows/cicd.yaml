@@ -1,0 +1,52 @@
+name: CI/CD EKS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  ECR_REPOSITORY: web
+  AWS_REGION: ap-northeast-2
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build Docker image
+      run: |
+        docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+        docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Push Docker image to ECR
+      run: |
+        docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+
+    - name: Install kubectl
+      run: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/
+
+    - name: Set kubeconfig
+      run: echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+
+    - name: Update Kubernetes deployment
+      run: |
+        kubectl set image deployment/web-deployment web-container=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG --record
