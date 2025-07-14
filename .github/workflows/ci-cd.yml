@@ -39,17 +39,15 @@ jobs:
 
     - name: Install kubectl
       run: |
-        curl -LO "https://dl.k8s.io/release/v1.30.1/bin/linux/amd64/kubectl"
+        curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
 
-
-    - name: Set kubeconfig from secret
+    - name: Configure kubeconfig for EKS
       run: |
-        mkdir -p $HOME/.kube
-        echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+        aws eks update-kubeconfig --region $AWS_REGION --name eks
 
     - name: Update Kubernetes deployment
       run: |
         kubectl set image deployment/web-deployment \
-          web-container=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG --record
+          web-container=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
