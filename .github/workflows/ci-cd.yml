@@ -38,10 +38,14 @@ jobs:
         docker push ${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
 
     - name: Install kubectl
+      shell: bash
       run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        set -e
+        VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
+        echo "Installing kubectl version: $VERSION"
+        curl -LO "https://dl.k8s.io/release/${VERSION}/bin/linux/amd64/kubectl"
         chmod +x kubectl
-        sudo mv kubectl /usr/local/bin/
+        sudo mv kubectl /usr/local/bin/kubectl
 
     - name: Configure kubeconfig for EKS
       run: |
